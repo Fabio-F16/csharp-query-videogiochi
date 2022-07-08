@@ -112,30 +112,107 @@ GROUP BY device_id
 -- 
 -- 6- Ordinare i videogame in base alla media delle recensioni (del videogioco vogliamo solo l'ID) (500)
 
-
+SELECT videogame_id, AVG(rating) AS avg_rating
+FROM reviews
+GROUP BY videogame_id
+ORDER BY AVG(rating);
 -- 
 -- 
 -- ------ Query con join
 -- 
 -- ```
 -- 1- Selezionare i dati di tutti giocatori che hanno scritto almeno una recensione, mostrandoli una sola volta (996)
+SELECT player_id
+FROM reviews
+INNER JOIN players on reviews.player_id = players.id
+GROUP BY player_id
+
 -- 
 -- 2- Sezionare tutti i videogame dei tornei tenuti nel 2016, mostrandoli una sola volta (226)
+
+SELECT videogames.name AS nome_videogame
+FROM tournament_videogame
+inner join videogames on videogame_id = videogames.id
+inner join tournaments on tournament_id = tournaments.id
+WHERE tournaments.year = 2016
+GROUP BY videogames.name
 -- 
 -- 3- Mostrare le categorie di ogni videogioco
 -- SELECT v.id AS videogame_id, v.name AS videogame_name, v.release_date, c.id AS category_id, c.name AS category_name (1718)
+SELECT videogames.name AS nome_videogioco, categories.name AS nome_categoria
+FROM category_videogame
+inner join videogames on videogame_id = videogames.id
+inner join categories on category_id = categories.id
+
 -- 
 -- 4- Selezionare i dati di tutte le software house che hanno rilasciato almeno un gioco dopo il 2020, mostrandoli una sola volta (6)
+
+SELECT software_houses.name
+FROM videogames
+INNER JOIN software_houses ON software_house_id = software_houses.id
+WHERE YEAR(videogames.release_date) > 2020
+GROUP BY software_houses.name
 -- 
 -- 5- Selezionare i premi ricevuti da ogni software house per i videogiochi che ha prodotto (55)
+
+SELECT sh.name, aw.name
+FROM awards AS aw
+INNER JOIN award_videogame AS awvg ON aw.id = awvg.award_id
+INNER JOIN videogames AS vg ON vg.id = awvg.videogame_id
+INNER JOIN software_houses AS sh ON sh.id = vg.software_house_id
+ORDER BY sh.name;
 -- 
 -- 6- Selezionare categorie e classificazioni PEGI dei videogiochi che hanno ricevuto recensioni da 4 e 5 stelle, mostrandole una sola volta (3363)
+
+SELECT vg.name, c.name, pl.name
+FROM reviews AS rw
+INNER JOIN videogames AS vg ON vg.id = rw.videogame_id
+INNER JOIN category_videogame AS cvg ON vg.id = cvg.videogame_id
+INNER JOIN categories AS c ON c.id = cvg.category_id
+INNER JOIN pegi_label_videogame AS pvg ON vg.id = pvg.videogame_id
+INNER JOIN pegi_labels AS pl ON pL.id = pvg.pegi_label_id
+WHERE rw.rating >=4 AND rw.rating <=5
+GROUP BY vg.name, c.name, pl.name;
+
 -- 
 -- 7- Selezionare quali giochi erano presenti nei tornei nei quali hanno partecipato i giocatori il cui nome inizia per 'S' (474)
+SELECT DISTINCT vg.id, vg.name
+FROM players AS p
+INNER JOIN player_tournament AS pt ON p.id = pt.player_id
+INNER JOIN tournaments AS t ON t.id = pt.tournament_id
+INNER JOIN tournament_videogame AS tvg ON t.id = tvg.tournament_id
+INNER JOIN videogames AS vg ON vg.id= tvg.videogame_id
+WHERE p.name LIKE 'S%';
+
 -- 
 -- 8- Selezionare le città in cui è stato giocato il gioco dell'anno del 2018 (36)
+
+
+SELECT t.city
+FROM tournaments AS t
+INNER JOIN tournament_videogame AS tvg ON t.id = tvg.tournament_id
+INNER JOIN videogames AS vg ON vg.id = tvg.videogame_id
+INNER JOIN award_videogame AS awvg ON vg.id = awvg.videogame_id
+INNER JOIN awards AS aw ON aw.id = awvg.award_id
+WHERE DATEPART(YEAR, vg.release_date) = '2018'
+AND aw.name = 'Gioco dell''anno';
+
+
 -- 
 -- 9- Selezionare i giocatori che hanno giocato al gioco più atteso del 2018 in un torneo del 2019 (3306)
+
+SELECT p.*
+FROM tournaments AS t
+INNER JOIN tournament_videogame AS tvg ON t.id = tvg.tournament_id
+INNER JOIN videogames AS vg ON vg.id = tvg.videogame_id
+INNER JOIN award_videogame AS awvg ON vg.id = awvg.videogame_id
+INNER JOIN awards AS aw ON aw.id = awvg.award_id
+INNER JOIN player_tournament AS pt ON t.id = pt.tournament_id
+INNER JOIN players AS p ON p.id = pt.player_id
+WHERE t.year = '2019' 
+AND DATEPART(YEAR, vg.release_date) = '2018'
+AND aw.name = 'Gioco più atteso';
+
 -- 
 -- *********** BONUS ***********
 -- 
